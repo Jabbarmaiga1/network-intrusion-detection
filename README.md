@@ -111,4 +111,4 @@ CICIDS 2017 — Canadian Institute for Cybersecurity
 
 **Abdoul Jabbar Maiga**
 CS & ML Master's student @ ECUT, China
-[LinkedIn](https://www.linkedin.com/in/abdoul-jabbar-maiga-b68225361/)
+[LinkedIn](https://www.linkedin.com/in/abdoul-jabbar-maiga-b68225361/) | [Live Demo](https://network-intrusion-detection-k4navapemyf9yu9u4bxdxx.streamlit.app/)
