@@ -11,6 +11,14 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from xgboost import XGBClassifier
+
+models = {
+    "Random Forest":       (RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1), False),
+    "XGBoost":             (XGBClassifier(n_estimators=100, random_state=42, n_jobs=-1, verbosity=0), False),
+    "Neural Network":      (MLPClassifier(hidden_layer_sizes=(128, 64), max_iter=50, random_state=42), True),
+    "Logistic Regression": (LogisticRegression(max_iter=200, random_state=42, n_jobs=-1), True),
+}
 
 # ── Charger les données ──────────────────────────────────────
 print("Chargement des données...")
@@ -48,8 +56,9 @@ X_test_scaled  = scaler.transform(X_test)
 
 # ── Modèles à comparer ───────────────────────────────────────
 models = {
-    "Random Forest":     (RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1), False),
-    "Neural Network":    (MLPClassifier(hidden_layer_sizes=(128, 64), max_iter=50, random_state=42), True),
+    "Random Forest":       (RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1), False),
+    "XGBoost":             (XGBClassifier(n_estimators=100, random_state=42, n_jobs=-1, verbosity=0), False),
+    "Neural Network":      (MLPClassifier(hidden_layer_sizes=(128, 64), max_iter=50, random_state=42), True),
     "Logistic Regression": (LogisticRegression(max_iter=200, random_state=42, n_jobs=-1), True),
 }
 

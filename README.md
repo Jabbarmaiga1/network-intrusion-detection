@@ -12,9 +12,10 @@ A complete machine learning system that detects network intrusions and cyberatta
 
 | Model | Accuracy | F1-Score | Training Time |
 |-------|----------|----------|---------------|
-| Random Forest | 99.72% | 99.71% | 5s |
-| Neural Network | 97.64% | 97.48% | 49s |
-| Logistic Regression | 96.83% | 96.80% | 7s |
+| XGBoost | 99.82% | 99.82% | 19s |
+| Random Forest | 99.72% | 99.71% | 6s |
+| Neural Network | 97.64% | 97.48% | 137s |
+| Logistic Regression | 96.83% | 96.80% | 9s |
 
 ## 🔍 Attack Types Detected
 
