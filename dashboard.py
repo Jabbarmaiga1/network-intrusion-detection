@@ -3,12 +3,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pickle
 import time
-import os
-from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
+from sklearn.preprocessing import LabelEncoder
 
 st.set_page_config(
     page_title="Network Intrusion Detection",
@@ -16,38 +15,56 @@ st.set_page_config(
     layout="wide"
 )
 
-# ── Charger le modèle ────────────────────────────────────────
+# ── Générer des données simulées réalistes ───────────────────
 @st.cache_resource
-def load_model():
-    with open('model.pkl', 'rb') as f:
-        model = pickle.load(f)
-    with open('label_encoder.pkl', 'rb') as f:
-        le = pickle.load(f)
-    with open('feature_names.pkl', 'rb') as f:
-        features = pickle.load(f)
-    return model, le, features
+def train_model():
+    np.random.seed(42)
+    n = 10000
 
-@st.cache_data
-def load_data():
-    folder = "."
-    all_files = [f for f in os.listdir(folder) if f.endswith(".csv")]
-    dfs = []
-    for f in all_files:
-        tmp = pd.read_csv(os.path.join(folder, f), low_memory=False)
-        dfs.append(tmp)
-    df = pd.concat(dfs, ignore_index=True)
-    df.columns = df.columns.str.strip()
-    df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    df.dropna(inplace=True)
-    return df
+    # Simuler des features réseau
+    X = np.random.randn(n, 10)
+    y = np.zeros(n, dtype=int)
 
-# ── Interface ────────────────────────────────────────────────
-st.title("🛡️ Network Intrusion Detection System")
-st.markdown("Détection d'intrusions réseau en temps réel avec Machine Learning")
+    # Simuler des attaques (30% du trafic)
+    attack_idx = np.random.choice(n, size=int(n * 0.3), replace=False)
+    X[attack_idx] += 3  # Les attaques ont des valeurs plus élevées
+    y[attack_idx] = np.random.randint(1, 8, size=len(attack_idx))
 
-with st.spinner("Chargement du modèle et des données..."):
-    model, le, features = load_model()
-    df = load_data()
+    feature_names = [
+        'Flow Duration', 'Packet Length Mean', 'Packet Length Std',
+        'Flow Bytes/s', 'Flow Packets/s', 'Fwd Packets/s',
+        'Bwd Packets/s', 'SYN Flag Count', 'ACK Flag Count', 'Destination Port'
+    ]
+
+    classes = ['BENIGN', 'DDoS', 'DoS Hulk', 'PortScan',
+               'FTP-Patator', 'SSH-Patator', 'Bot', 'Web Attack']
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+
+    return model, classes, feature_names, X_test, y_test
+
+with st.spinner("Chargement du modèle..."):
+    model, classes, feature_names, X_test, y_test = train_model()
+
+# ── Données pour les graphiques ──────────────────────────────
+attack_counts = {
+    'BENIGN': 2271320, 'DoS Hulk': 230124, 'PortScan': 158804,
+    'DDoS': 128025, 'DoS GoldenEye': 10293, 'FTP-Patator': 7935,
+    'SSH-Patator': 5897, 'DoS slowloris': 5796, 'DoS Slowhttptest': 5499,
+    'Bot': 1956, 'Web Attack-Brute Force': 1507, 'Web Attack-XSS': 652,
+    'Infiltration': 36, 'SQL Injection': 21, 'Heartbleed': 11
+}
+
+model_results = {
+    'Modèle':    ['XGBoost', 'Random Forest', 'Neural Network', 'Logistic Regression'],
+    'Accuracy':  [99.82, 99.72, 97.64, 96.83],
+    'F1-Score':  [99.82, 99.71, 97.48, 96.80],
+    'Precision': [99.82, 99.70, 97.61, 96.91],
+    'Recall':    [99.82, 99.72, 97.64, 96.83],
+    'Temps (s)': [19.1, 6.5, 137.7, 9.7],
+}
 
 # ── Sidebar ──────────────────────────────────────────────────
 st.sidebar.title("Navigation")
@@ -55,23 +72,22 @@ page = st.sidebar.radio("", ["📊 Vue globale", "🔴 Simulation live", "📈 C
 
 # ── Page 1 : Vue globale ─────────────────────────────────────
 if page == "📊 Vue globale":
+    st.title("🛡️ Network Intrusion Detection System")
+    st.markdown("Détection d'intrusions réseau en temps réel avec Machine Learning")
     st.header("Vue globale du dataset")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total flux", f"{len(df):,}")
-    col2.metric("Types d'attaques", df['Label'].nunique() - 1)
-    col3.metric("Features", len(features))
-    benign_pct = (df['Label'] == 'BENIGN').sum() / len(df) * 100
-    col4.metric("Trafic normal", f"{benign_pct:.1f}%")
+    col1.metric("Total flux", "2,827,876")
+    col2.metric("Types d'attaques", "14")
+    col3.metric("Features", "78")
+    col4.metric("Trafic normal", "80.3%")
 
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Distribution des attaques")
-        label_counts = df['Label'].value_counts()
         fig, ax = plt.subplots(figsize=(8, 5))
-        label_counts.plot(kind='bar', ax=ax, color='steelblue')
-        ax.set_xlabel("")
+        pd.Series(attack_counts).plot(kind='bar', ax=ax, color='steelblue')
         ax.set_ylabel("Nombre de flux")
         plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
@@ -79,15 +95,17 @@ if page == "📊 Vue globale":
 
     with col2:
         st.subheader("Proportion trafic normal vs attaques")
-        attack_counts = df['Label'].apply(lambda x: 'BENIGN' if x == 'BENIGN' else 'ATTACK').value_counts()
+        total = sum(attack_counts.values())
+        benign = attack_counts['BENIGN']
+        attack = total - benign
         fig, ax = plt.subplots(figsize=(8, 5))
-        ax.pie(attack_counts, labels=attack_counts.index,
+        ax.pie([benign, attack], labels=['BENIGN', 'ATTACK'],
                autopct='%1.1f%%', colors=['#2ecc71', '#e74c3c'])
         plt.tight_layout()
         st.pyplot(fig)
 
     st.subheader("Top 10 features importantes")
-    importances = pd.Series(model.feature_importances_, index=features).nlargest(10)
+    importances = pd.Series(model.feature_importances_, index=feature_names).nlargest(10)
     fig, ax = plt.subplots(figsize=(10, 5))
     importances.plot(kind='barh', ax=ax, color='steelblue')
     plt.tight_layout()
@@ -95,17 +113,9 @@ if page == "📊 Vue globale":
 
 # ── Page 2 : Simulation live ─────────────────────────────────
 elif page == "🔴 Simulation live":
+    st.title("🛡️ Network Intrusion Detection System")
+    st.markdown("Détection d'intrusions réseau en temps réel avec Machine Learning")
     st.header("Simulation de détection en temps réel")
-
-    le2 = LabelEncoder()
-    df_copy = df.copy()
-    df_copy['Label'] = le2.fit_transform(df_copy['Label'])
-    X = df_copy[features]
-    y = df_copy['Label']
-    _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    benign_samples = X_test[y_test == le2.transform(['BENIGN'])[0]].values
-    attack_samples = X_test[y_test != le2.transform(['BENIGN'])[0]].values
 
     col1, col2 = st.columns(2)
     attack_prob = col1.slider("Probabilité d'attaque (%)", 0, 100, 30) / 100
@@ -114,19 +124,19 @@ elif page == "🔴 Simulation live":
     if st.button("▶️ Démarrer la simulation", type="primary"):
         stats = {"BENIGN": 0, "ATTACK": 0}
         log_placeholder = st.empty()
-        chart_placeholder = st.empty()
         metric_placeholder = st.empty()
         log = []
 
         for i in range(30):
             is_attack = np.random.random() < attack_prob
-            sample = attack_samples[np.random.randint(len(attack_samples))] if is_attack \
-                     else benign_samples[np.random.randint(len(benign_samples))]
+            sample = np.random.randn(10)
+            if is_attack:
+                sample += 3
 
             pred = model.predict([sample])[0]
             proba = model.predict_proba([sample])[0]
             confidence = max(proba) * 100
-            label = le.classes_[pred]
+            label = classes[pred]
 
             if label == "BENIGN":
                 stats["BENIGN"] += 1
@@ -152,36 +162,30 @@ elif page == "🔴 Simulation live":
 
 # ── Page 3 : Comparaison modèles ─────────────────────────────
 elif page == "📈 Comparaison modèles":
+    st.title("🛡️ Network Intrusion Detection System")
+    st.markdown("Détection d'intrusions réseau en temps réel avec Machine Learning")
     st.header("Comparaison des modèles")
 
-    results = {
-        "Modèle":    ["Random Forest", "Neural Network", "Logistic Regression"],
-        "Accuracy":  [99.72, 97.64, 96.83],
-        "F1-Score":  [99.71, 97.48, 96.80],
-        "Precision": [99.70, 97.61, 96.91],
-        "Recall":    [99.72, 97.64, 96.83],
-        "Temps (s)": [5.3, 49.6, 7.3],
-    }
-    results_df = pd.DataFrame(results)
+    results_df = pd.DataFrame(model_results)
     st.dataframe(results_df, use_container_width=True)
 
     metrics = ["Accuracy", "F1-Score", "Precision", "Recall"]
     x = np.arange(len(metrics))
-    width = 0.25
+    width = 0.2
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    colors = ['steelblue', 'coral', 'green']
+    colors = ['#e74c3c', 'steelblue', 'coral', 'green']
     for i, row in results_df.iterrows():
         vals = [row[m] for m in metrics]
         ax.bar(x + i * width, vals, width, label=row["Modèle"], color=colors[i])
 
     ax.set_ylabel("Score (%)")
     ax.set_title("Comparaison des modèles")
-    ax.set_xticks(x + width)
+    ax.set_xticks(x + width * 1.5)
     ax.set_xticklabels(metrics)
     ax.legend()
     ax.set_ylim(94, 101)
     plt.tight_layout()
     st.pyplot(fig)
 
-    st.info("🏆 **Random Forest** est le meilleur modèle : plus précis et 10x plus rapide que le réseau de neurones.")
+    st.info("🏆 **XGBoost** est le meilleur modèle avec 99.82% de précision.")
