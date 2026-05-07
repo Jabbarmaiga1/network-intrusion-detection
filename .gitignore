@@ -1,0 +1,14 @@
+# Dataset files (trop lourds pour GitHub)
+*.csv
+
+# Modèle entraîné (trop lourd)
+model.pkl
+label_encoder.pkl
+feature_names.pkl
+
+# Environnement virtuel
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
