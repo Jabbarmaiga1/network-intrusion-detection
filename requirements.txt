@@ -4,5 +4,7 @@ scikit-learn
 matplotlib
 seaborn
 streamlit
-xgboost
 imbalanced-learn
+fastapi
+uvicorn
+pydantic
