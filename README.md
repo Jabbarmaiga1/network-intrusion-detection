@@ -45,6 +45,8 @@ network-intrusion-detection/
 ├── compare_models.py    # Level 3 - Model comparison
 ├── dashboard.py         # Level 4 - Streamlit dashboard
 ├── imbalanced.py        # Level 5 - SMOTE class balancing
+├── api.py               # FastAPI REST endpoint for predictions
+├── Dockerfile           # Containerized API deployment
 └── requirements.txt
 ```
 
@@ -98,7 +100,21 @@ streamlit run dashboard.py
 
 # Level 5 - SMOTE analysis
 python imbalanced.py
+
+# REST API (served on http://localhost:8000)
+uvicorn api:app --reload
 ```
+
+### 🐳 Docker
+
+```bash
+docker build -t nids-api .
+docker run -p 8000:8000 nids-api
+```
+
+> Note: `api.py` trains a lightweight RandomForest on synthetic data at
+> startup so the container stays self-contained — it demonstrates the
+> serving architecture rather than the full CICIDS-trained model.
 
 ## 📁 Dataset
 
